@@ -16,7 +16,7 @@ skynet.start(function()
 	print("Server start")
 	local match = skynet.newservice("match")
 	local auth = skynet.newservice("auth")
-	local dao = skynet.newservice("dao")
+	--local dao = skynet.newservice("dao")
 	local watchdog = skynet.newservice("watchdog")
 	local debug_console = skynet.newservice("debug_console", 8889)
 	skynet.call(watchdog, "lua", "start", {
