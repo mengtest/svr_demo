@@ -1,0 +1,295 @@
+local skynet = require "skynet"
+local card_cfg = require "game.card_cfg"
+local nethelper = require "game.nethelper"
+local class = require "game.class"
+
+local Battle = class()
+local Player = class()
+local Card = class()
+local Grid = class()
+local Board = class()
+
+local MAX_ROW = 4
+local MAX_COL = 4
+local MAX_CARD_NUM = 5
+
+local battle = nil
+local turn = nil
+
+function Card:ctor(cid, player)
+    self.cid_ = cid
+    self.player_ = player
+end
+
+function Card:getOwner()
+    return self.player_
+end
+
+function Card:setOwner(player)
+    self.player_ = player
+end
+
+function Grid:ctor(row, col)
+    self.row_ = row
+    self.col_ = col
+    self.card_ = nil
+end
+
+function Grid:getCard()
+    return self.card_
+end
+
+function Grid:setCard(card)
+    self.card_ = card
+end
+
+function Board:ctor()
+    self.grids_ = {}
+    for row = 1,MAX_ROW do
+        self.grids_[row] = self.grids_[row] or {}
+        for col = 1, MAX_COL do
+            self.grids_[row][col] = Grid.new(row, col)
+        end
+    end
+end
+
+function Board:placeCard(row, col, card)
+    local grid = self:getGrid(row, col)
+    if not grid or grid:getCard() then
+        return
+    end
+    grid:setCard(card)
+    
+    local enemys = self:getAroundEnemy(grid)
+    if #enemys > 1 then
+        self.fighter_ = grid
+        self.enemys_ = enemys
+    elseif #enemys == 1 then
+        self:fight(grid, enemys[1])
+    end
+
+    return true
+end
+
+function Board:selFightTarget(row, col)
+    if not self.fighter_ or not self.enemys_ then
+        return
+    end
+    local grid = self:getGrid(row, col)
+    for _, enemy in ipairs(self.enemys_) do
+        if enemy == grid then
+            self:fight(self.fighter_, enemy)
+            self.figher_ = nil
+            self.enemys_ = nil
+            return true
+        end
+    end
+end
+
+function Board:isEnemy(srcGrid, dstGrid)
+    return srcGrid and dstGrid and srcGrid:getCard() and dstGrid:getCard() and srcGrid:getCard():getOwner() ~= dstGrid:getCard():getOwner()
+end
+
+function Board:getAroundEnemy(srcGrid)
+    local row = srcGrid.row_
+    local col = srcGrid.col_
+    local owner = srcGrid:getCard():getOwner()
+
+    local res_set = {}
+    local around_pos = 
+    {
+        {row,   col-1}, {row-1, col-1},
+        {row-1, col  }, {row-1, col+1},
+        {row,   col+1}, {row+1, col+1},
+        {row+1, col  }, {row+1, col-1}
+    }
+
+    for _, pos in ipairs(around_pos) do
+        local dstGrid = self:getGrid(pos[1], pos[2])
+        if self:isEnemy(srcGrid, dstGrid) then
+            table.insert(res_set, dstGrid)
+        end
+    end
+
+    return res_set
+end
+
+function Board:getGrid(row, col)
+    if row >= 1 and row <= MAX_ROW and col >= 1 and col <= MAX_COL then
+        return self.grids_[row][col]
+    end
+end
+
+function Board:fight(srcGrid, dstGrid)
+    local srcCard = srcGrid:getCard()
+    local dstCard = dstGrid:getCard()
+    assert(srcCard and dstCard)
+
+    local srcAttrCfg = card_cfg:getCardAttrCfg(srcCard.cid_)
+    local dstAttrCfg = card_cfg:getCardAttrCfg(dstCard.cid_)
+    assert(srcAttrCfg and dstAttrCfg)
+
+    local srcAtk = srcAttrCfg('atk')
+    local dstDef = dstAttrCfg('def')
+    if srcAtk == dstDef then
+        return
+    elseif srcAtk > dstDef then
+        self:win(srcGrid, dstGrid)
+    else
+        self:lose(srcGrid, dstGrid)
+    end
+end
+
+function Board:capture(srcGrid)
+    print('capture')
+    local enemy_set = self:getAroundEnemy(srcGrid)
+    for _, enemy in ipairs(enemy_set) do
+        enemy:getCard():setOwner(srcGrid:getCard():getOwner())
+    end
+end
+
+function Board:win(srcGrid, dstGrid)
+    dstGrid:getCard():setOwner(srcGrid:getCard():getOwner())
+    self:capture(dstGrid)
+end
+
+function Board:lose(srcGrid, dstGrid)
+    srcGrid:getCard():setOwner(dstGrid:getCard():getOwner())
+    self:capture(srcGrid)
+end
+
+function Board:getScore(uid)
+    local cnt = 0
+    for row = 1, MAX_ROW do
+        for col = 1, MAX_COL do
+            local grid = self:getGrid(row, col)
+            if grid:getCard() and grid:getCard():getOwner().agent_.uid== uid then
+                cnt = cnt + 1
+            end
+        end
+    end
+    return cnt
+end
+
+local function changeTurn()
+    battle:changeTurn()
+end
+
+function Player:ctor(c1, c2)
+    self.agent_ = c1
+    self.agentEnemy_ = c2
+    self.cards_ = {}
+
+    local cid_tbl = {}
+    for i = 1, MAX_CARD_NUM do
+        self.cards_[i] = Card.new(card_cfg:randomCardID(), self)
+        cid_tbl[i] = self.cards_[i].cid_
+    end
+
+    nethelper:getConn(c1.fd):onFightStart(c2.uid, table.concat(cid_tbl, '#'))
+end
+
+function Player:placeCard(pos, row, col)
+    local card = self.cards_[pos]
+    if not card then
+        return
+    end
+
+    if not battle.Board_:placeCard(row, col, card) then
+        print('place card err', row, col, card)
+        return
+    end
+    self.cards_[pos] = nil
+    
+    nethelper:getConn(self.agentEnemy_.fd):onEnemyPlay(card.cid_, pos, row, col)
+
+    return true
+end
+
+function Battle:start(c1, c2)
+    print('fight start ', c1.uid, c2.uid)
+    skynet.timeout(500, changeTurn)
+    
+    self.players_ = {}
+    self.players_[c1.uid] = Player.new(c1, c2)
+    self.players_[c2.uid] = Player.new(c2, c1)
+
+    self.Board_ = Board.new()
+
+    self.turn = self.players_[c1.uid]
+end
+
+function Battle:changeTurn()
+    local u1, p1 = next(self.players_)
+    local u2, p2 = next(self.players_, u1)
+    turn = turn == p1 and p2 or p1
+    nethelper:getConn(p1.agent_.fd):onTurnBegin(turn.agent_.uid)
+    nethelper:getConn(p2.agent_.fd):onTurnBegin(turn.agent_.uid)
+    print(turn.agent_.uid, 'turn')
+end
+
+function Battle:getPlayer(uid)
+    return self.players_[uid]
+end
+
+function Battle:placeCard(client, srcpos, row, col)
+    print('placeCard', client.uid, srcpos, row, col)
+    local player = self:getPlayer(client.uid)
+    if not player then
+        print('player not exist!', client.uid)
+        return
+    end
+
+    if not player:placeCard(tonumber(srcpos), tonumber(row), tonumber(col)) then
+        return
+    end
+
+    if self:isOver() then
+        print('fight is over')
+        local uid_p1, p1 = next(self.players_)
+        local uid_p2, p2 = next(self.players_, uid_p1)
+        local score_p1 = self.Board_:getScore(uid_p1)
+        local score_p2 = self.Board_:getScore(uid_p2)
+        if score_p1 > score_p2 then
+            print('winner is ', uid_p1)
+        elseif score_p1 < score_p2 then
+            print('winner is ', uid_p2)
+        else
+            print('draw game')
+        end
+
+        nethelper:getConn(p1.agent_.fd):onGameOver(score_p1, score_p2)
+        nethelper:getConn(p2.agent_.fd):onGameOver(score_p2, score_p1)
+
+        skynet.exit()
+    end
+
+    skynet.timeout(100, changeTurn)
+end
+
+function Battle:isOver()
+    for _, player in pairs(self.players_) do
+        if next(player.cards_) then
+            return false
+        end
+    end
+    return true
+end
+
+skynet.start(function()
+    battle = Battle.new()
+
+    skynet.dispatch("lua", function(session, source, cmd, ...)
+        print('fight service !')
+        local f = battle[cmd]
+        if f then
+            local ok, result = pcall(f, battle, ...)
+            if not ok then
+                error(result)
+            end
+        else
+            assert(false, 'cmd not support '..cmd)
+        end
+        skynet.ret()
+    end)
+end)
