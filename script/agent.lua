@@ -1,5 +1,5 @@
 local skynet = require "skynet"
-local net = require "net"
+-- local net = require "net"
 
 local WATCHDOG
 local host
@@ -41,26 +41,26 @@ function GAME:login(uid)
         local ret = skynet.call("AUTHSERVICE", "lua", "login", uid)
         print('login auth ret ', uid, ret)
         if not ret then
-            net:getConn(player.fd):onLoginFailed("invalid account")
+            -- net:getConn(player.fd):onLoginFailed("invalid account")
             skynet.call(WATCHDOG, "lua", "close", player.fd)
             return
         end
 	player.uid = uid
 	player.agent = skynet.self()
-	net:getConn(player.fd):onLoginSucceed()
+	-- net:getConn(player.fd):onLoginSucceed()
 end
 
 function GAME:startMatch()
 	local ret = skynet.call("MATCHSERVER", "lua", "start", player) 
 	if ret == true then
-		net:getConn(player.fd):onMatchStart()
+		-- net:getConn(player.fd):onMatchStart()
 	end
 end
 
 function GAME:cancelMatch()
 	local ret = skynet.call("MATCHSERVER", "lua", "cancel", player) 
         if ret == true then
-            net:getConn(player.fd):onMatchCencel()
+            -- net:getConn(player.fd):onMatchCencel()
         end
 end
 
@@ -75,7 +75,7 @@ end
 
 function GAME:heartBeat()
 	print('ret heartBeat', player.fd, tostring(os.time()))
-	net:getConn(player.fd):onHeartBeat(tostring(os.time()))
+	-- net:getConn(player.fd):onHeartBeat(tostring(os.time()))
 end
 
 function GAME:onFightStart(fight)

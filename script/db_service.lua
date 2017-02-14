@@ -1,4 +1,5 @@
 local skynet = require "skynet"
+require "skynet.manager"
 local mysql = require "mysql"
 
 local dbs_id = ...

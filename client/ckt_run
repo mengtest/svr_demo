@@ -1,0 +1,7 @@
+#!/bin/bash
+
+client_path=$(pwd)/ckt_client.lua
+
+cd ../3rd/skynet/
+lua $client_path
+
