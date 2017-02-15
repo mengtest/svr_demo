@@ -83,7 +83,9 @@ proto.s2c = sprotoparser.parse [[
 heartbeat 1 {}
 
 perflop 2 {
-	card_info 0 : *integer
+	request {
+		card_info 0 : *integer
+	}
 }
 
 .PlayerInfo {
@@ -96,9 +98,11 @@ perflop 2 {
 
 #同步房间内信息
 update_player_info 3  {
-	room_id 0 : integer
-	room_odds 1 : integer
-	players 2 : *PlayerInfo
+	request {
+		room_id 0 : integer
+		room_odds 1 : integer
+		players 2 : *PlayerInfo
+	}
 }
 
 ]]
