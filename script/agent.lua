@@ -57,7 +57,7 @@ function GAME:login()
         end
 	player.uid = uid
 	player.agent = skynet.self()
-	return { base_resp = { code = 0, msg = "登陆" } }
+	return { base_resp = { code = 0, msg = "登陆失败" } }
 	--net:getConn(player.fd):onLoginSucceed()
 end
 
@@ -113,7 +113,7 @@ end
 function CMD.disconnect()
 	-- todo: do something before exit
 	skynet.exit()
-eretnd
+end
 
 skynet.start(function()
 	skynet.dispatch("lua", function(_,_, command, ...)

@@ -21,7 +21,9 @@ perflop 2 {
 
 #同步房间内信息
 update_player_info 3  {
-	room_id 0 : integer
-	room_odds 1 : integer
-	players 2 : *PlayerInfo
+	request {
+		room_id 0 : integer
+			room_odds 1 : integer
+			players 2 : *PlayerInfo
+	}
 }
