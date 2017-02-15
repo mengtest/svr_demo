@@ -12,6 +12,7 @@ CREATE TABLE user_info( \
 	uid int(10) unsigned NOT NULL AUTO_INCREMENT, \
 	user_name varchar(64) NOT NULL DEFAULT '' COMMENT '账号', \
 	passwd varchar(64)  NOT NULL DEFAULT '' COMMENT '密码', \
+	icon varchar(1024) NOT NULL DEFAULT '' COMMENT '头像',\
 	moeny int(10) unsigned  NOT NULL DEFAULT 0 COMMENT '钱', \
 	PRIMARY KEY (uid) \
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8;" $i )
