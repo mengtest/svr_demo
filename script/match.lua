@@ -1,6 +1,5 @@
 local skynet = require "skynet"
 --local net = require "net"
---local net = require "net"
 require "skynet.manager"
 
 local Match = {}
