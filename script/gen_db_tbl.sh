@@ -18,4 +18,4 @@ CREATE TABLE user_info( \
 
 #echo $sql;
 #mysql -h 127.0.0.1 -P 3306 -Dappsvr -ugodman -pthegodofman -A -e "$sql"
-mysql -h localhost -P $port -D$dbname -u$user -p$pwd -A -e "$sql"
+mysql -h $ip -P $port -D$dbname -u$user -p$pwd -A -e "$sql"
