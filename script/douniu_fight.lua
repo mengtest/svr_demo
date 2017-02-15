@@ -17,7 +17,7 @@ local function initPlayer()
 		money = 0,
 		is_win = false,
 		is_leader = 0, --庄
-		card_lst = {}, --手牌
+		hand_card_lst = {}, --手牌
 	}
 
 	return player
@@ -42,14 +42,12 @@ function DouNiuEvHandler:onShuffle()
 	end	
 
 	for k,player in ipairs(player_lst) do
-		local player_card_lst = {}
 		for i = 1, i <= 4, 1 do
-			table.insert(player_card_lst, card_lst[i])
+			table.insert(player.hand_card_lst, card_lst[i])
 		end
 
 		--推送发牌消息
 		--skynet.call(player.agent, "game", "", player_card_lst) --战斗
-		player_card_lst = nil
 		table.remove(card_lst,0,4)
 	end
 end
@@ -89,16 +87,16 @@ end
 function DouNiuEvHandler:onPackCard(uid, pack_type, ret_card_lst)
     print('DouNiuEvHandler onPackCard:')
 	local sum = 0
-	local sanpai = true
+	local is_niu = false
 
 	for player in player_lst do
 		if player.uid == uid then
 			for card_idx in ret_card_lst do
-				sum = sum + player.card_lst[card_idx]
+				sum = sum + player.hand_card_lst[card_idx]
 			end
 
 			if sum % 10 == 0 then
-				sanpai = false
+				is_niu = true
 			end
 		end
 	end
