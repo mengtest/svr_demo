@@ -33,7 +33,7 @@ enter_room 1 {
 	}
 }
 
-drop_card 2 {
+pack_card 2 {
 	request {
 		base_req 0 : BaseReq
 		card_info 1 : *integer

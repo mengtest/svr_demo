@@ -23,7 +23,8 @@ perflop 2 {
 update_player_info 3  {
 	request {
 		room_id 0 : integer
-			room_odds 1 : integer
-			players 2 : *PlayerInfo
+		room_odds 1 : integer
+		players 2 : *PlayerInfo
+		status 3 : integer #房间状态
 	}
 }

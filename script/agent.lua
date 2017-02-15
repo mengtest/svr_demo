@@ -15,22 +15,23 @@ local GAME = {}
 local player = {}
 local fightsvr_inst
 
-function GAME:get()
-	print("get", self.what)
-	local r = skynet.call("SIMPLEDB", "lua", "get", self.what)
+function GAME:enter_room()
+	print("enter_room")
+	local r = skynet.call("DOUNIUSERVER", "lua", "enterRoom", self.what)
 	return { result = r }
 end
 
-function GAME:set()
+function GAME:onPackCard()
 	print("set", self.what, self.value)
-	local r = skynet.call("SIMPLEDB", "lua", "set", self.what, self.value)
+	local r = skynet.call("DOUNIUSERVER", "lua", "onPackCard", self.what, self.value)
 end
 
-function GAME:handshake()
+function GAME:get_leader()
 	return { msg = "Welcome to skynet, I will send heartbeat every 5 sec." }
 end
 
-function GAME:quit()
+function GAME:leave_room()
+	skynet.call("DOUNIUSERVER", "lua", "leaveRoom", client_fd)
 	skynet.call(WATCHDOG, "lua", "close", client_fd)
 end
 
@@ -57,14 +58,12 @@ function GAME:login()
         end
 	player.uid = uid
 	player.agent = skynet.self()
-	return { base_resp = { code = 0, msg = "登陆失败" } }
-	--net:getConn(player.fd):onLoginSucceed()
+	return { base_resp = { code = 0, msg = "登陆成功" } }
 end
 
 function GAME:startMatch()
 	local ret = skynet.call("MATCHSERVER", "lua", "start", player) 
 	if ret == true then
-		--net:getConn(player.fd):onMatchStart()
 	end
 end
 

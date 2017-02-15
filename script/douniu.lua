@@ -5,6 +5,7 @@ local Match = {}
 local match_queue = {}
 
 
+--local class = require "class"
 --local CRoom = class() --房间信息
 
 local DOUNIU = {}
@@ -74,12 +75,13 @@ function DOUNIU:matchLoop()
 			end
 		end
 	end
-	skynet.timeout(500, Match.matchLoop)
+	skynet.timeout(500, DOUNIU.matchLoop)
 end
 
 function DOUNIU:startGame(v_room)
 	if v_room.status ~= 1 then
 		print("start game ", v_room.room_id)
+		--local fightsvr_inst = skynet.newservice("douniu_fight")
 		--for player in ipairs(v_room.player) do
 		--	skynet.call(player.agent, "game", "onFightStart", fightsvr_inst)
 		--end
