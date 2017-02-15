@@ -19,3 +19,10 @@ lualoader = skynet_root.."lualib/loader.lua"
 snax = skynet_root.."examples/?.lua;"..skynet_root.."test/?.lua"
 cpath = skynet_root.."cservice/?.so"
 -- daemon = "./skynet.pid"
+
+mysql_host = "127.0.0.1"
+mysql_port = 3306
+mysql_user = "root"
+mysql_passwd = "root"
+
+db_service_cnt = 1
