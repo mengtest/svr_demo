@@ -60,7 +60,7 @@ end
 local last = ""
 
 local function print_request(name, args)
-	print("REQUEST", name)
+	print("REQUEST:", name)
 	if args then
 		for k,v in pairs(args) do
 			print(k,v)
@@ -69,7 +69,7 @@ local function print_request(name, args)
 end
 
 local function print_response(session, args)
-	print("RESPONSE", session)
+	print("RESPONSE", session, name)
 	if args then
 		for k,v in pairs(args) do
 			print(k,v)

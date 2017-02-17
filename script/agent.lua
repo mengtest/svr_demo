@@ -61,10 +61,12 @@ function GAME:login()
 	return { base_resp = { code = 0, msg = "登陆成功" } }
 end
 
-function GAME:startMatch()
-	local ret = skynet.call("MATCHSERVER", "lua", "start", player) 
-	if ret == true then
-	end
+function GAME:startMatch(fight)
+	print('startMatch ', fight)
+	fightsvr_inst = fight
+	--local ret = skynet.call("DOUNIUSERVE", "lua", "start", player) 
+	--if ret == true then
+	--end
 end
 
 
@@ -106,6 +108,7 @@ function CMD.start(conf)
 	end)
 
 	player.fd = fd
+	player.agent = skynet.self()
 	skynet.call(gate, "lua", "forward", fd)
 end
 

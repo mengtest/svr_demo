@@ -8,10 +8,12 @@ local DouNiuEvHandler = {} --事件表
 local player_lst = {} --玩家战斗信息
 local card_lst = {} --牌
 local room_status = 0 --0开始阶段 1抢庄阶段 2非庄选倍率 3结算
+local status_begin = 0
 
 local function initPlayer()
     print('initPlayer:')
 	local player = {
+		uid = 0,
 		odds = 0,
 		icon = "", 
 		money = 0,
@@ -21,6 +23,52 @@ local function initPlayer()
 	}
 
 	return player
+end
+
+local function getPlayer(uid)
+	for player in player_lst do
+		if uid == player.uid then
+			return player
+		end
+	end
+	return  nil
+end
+
+local function broadcast(msg)
+	for player in pairs(player_lst) do
+		skynet.call(player.agent, "game", "send_package", msg)
+	end
+end
+
+function DouNiuEvHandler:checkStatus()
+	if room_status == 1 then
+		if os.time() - status_beigin  > 5 and #player_lst > 2 then
+			--时间
+			status_begin = os.time()
+			room_status = 2
+		end
+	end
+
+	if room_status == 2 then
+		local leader_lst = {}
+		for player in pairs(player_lst) do
+			player.odds = 1
+		end
+
+		if os.time() - status_beigin > 5 then
+			--时间
+			status_begin = os.time()
+		end
+		status_begin = os.time()
+		room_status = 3
+	end
+
+	if room_status == 3 then
+		--room_status = 0
+		status_begin = os.time()
+	end
+
+	skynet.timeout(500, DouNiuEvHandler.checkStatus)
 end
 
 function DouNiuEvHandler:onStart()
@@ -74,8 +122,10 @@ function DouNiuEvHandler:onGetBanker(uid, odds)
 end
 
 --非庄选择倍率
-function DouNiuEvHandler:onSetOdds(odds)
+function DouNiuEvHandler:onSetOdds(uid, odds)
     print('DouNiuEvHandler onSetOdds:'..odds)
+	local player = getPlayer(uid)
+	player.odds = odds
 end
 
 --发最后一张牌
@@ -120,7 +170,7 @@ end
 
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
-        print('fight service !')
+        print('douniu fight service !')
         local f = g_battle[cmd]
         if f then
             local ok, result = pcall(f, g_battle, ...)
