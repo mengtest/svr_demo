@@ -1,5 +1,6 @@
 local skynet = require "skynet"
 local redis = require "redis"
+local sprotoloader = require "sprotoloader"
 
 local conf = 
 {
@@ -22,7 +23,8 @@ skynet.start(function()
 	math.randomseed(os.time())
 	print("Server start")
 	start_db_service()
-	local match = skynet.newservice("match")
+	skynet.uniqueservice("protoloader")
+	local douniu_room = skynet.newservice("douniu_room")
 	local auth = skynet.newservice("auth")
 	--local dao = skynet.newservice("dao")
 	local watchdog = skynet.newservice("watchdog")
