@@ -6,7 +6,7 @@ local math = require "math"
 --斗牛战斗信息
 local DouNiuEvHandler = {} --事件表
 local player_lst = {} --玩家战斗信息
-local card_lst = {} --牌
+local card_lst = {} --牌堆
 local room_status = 0 --0开始阶段 1抢庄阶段 2非庄选倍率 3结算
 local status_begin = 0
 
@@ -34,17 +34,33 @@ local function getPlayer(uid)
 	return  nil
 end
 
+local function transCard(card_num)
+	if card_num % 13 + 1 >= 10 then
+		return 10
+	end
+
+	return card_num % 13 + 1 
+end
+
 local function broadcast(msg)
 	for player in pairs(player_lst) do
 		skynet.call(player.agent, "game", "send_package", msg)
 	end
 end
 
+--斗牛流程控制器
 function DouNiuEvHandler:checkStatus()
 	if room_status == 1 then
 		if os.time() - status_beigin  > 5 and #player_lst > 2 then
 			--时间
 			status_begin = os.time()
+
+			--抢庄结果
+			for _,player in ipairs(player_lst) do
+				player.is_leader = 1
+				break
+			end
+
 			room_status = 2
 		end
 	end
@@ -52,20 +68,28 @@ function DouNiuEvHandler:checkStatus()
 	if room_status == 2 then
 		local leader_lst = {}
 		for player in pairs(player_lst) do
-			player.odds = 1
+			player.odds = 0
 		end
 
 		if os.time() - status_beigin > 5 then
 			--时间
 			status_begin = os.time()
+			for _,player in ipairs(player_lst) do
+				if player.odds == 0 then
+					player.odds = 5
+				end
+			end
+			status_begin = os.time()
+			room_status = 3
 		end
-		status_begin = os.time()
-		room_status = 3
 	end
 
 	if room_status == 3 then
 		--room_status = 0
 		status_begin = os.time()
+		for _,player in ipairs(player_lst) do
+			--强制亮牌,计算结果
+		end
 	end
 
 	skynet.timeout(500, DouNiuEvHandler.checkStatus)
@@ -103,21 +127,10 @@ end
 --抢庄
 function DouNiuEvHandler:onGetBanker(uid, odds)
     print('DouNiuEvHandler onGetBanker: '..odds)
-	local all_ready = true
-	for player in ipairs(player_lst) do
-		if player.uid == uid then
-			player.odds = odds
-		end
 
-		if player.odds == 0 then
-			all_ready = false
-		end
-	end
-
-	if all_ready == true then
-		room_status = 2
-		--推送房间进度信息
-		--进入下一个阶段
+	local player = getPlayer(uid)
+	if player ~= nil then
+		player.odds = odds
 	end
 end
 
@@ -139,18 +152,14 @@ function DouNiuEvHandler:onPackCard(uid, pack_type, ret_card_lst)
 	local sum = 0
 	local is_niu = false
 
-	for player in player_lst do
-		if player.uid == uid then
-			for card_idx in ret_card_lst do
-				sum = sum + player.hand_card_lst[card_idx]
-			end
-
-			if sum % 10 == 0 then
-				is_niu = true
-			end
-		end
+	local player = getPlayer(uid)
+	for card_idx in ret_card_lst do
+		sum = sum + transCard(player.hand_card_lst[card_idx])
 	end
 
+	if sum % 10 == 0 then
+		is_niu = true
+	end
 	--推送房间进度信息
 	--进入下一个阶段
 end
