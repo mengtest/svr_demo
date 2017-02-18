@@ -10,7 +10,7 @@ local conf =
 }
 
 local function start_db_service()
-	local db_service_cnt = skynet.getenv "db_service_cnt"
+	local db_service_cnt = tonumber(skynet.getenv "db_service_cnt")
 	for i = 1, db_service_cnt do
 		skynet.newservice("db_service", i)
 	end

@@ -1,5 +1,5 @@
 package.cpath = "luaclib/?.so"
-package.path = "lualib/?.lua;examples/?.lua"
+package.path = "lualib/?.lua;examples/?.lua;proto/?.lua;"
 
 if _VERSION ~= "Lua 5.3" then
 	error "Use lua 5.3"
@@ -98,8 +98,8 @@ local function dispatch_package()
 	end
 end
 
-send_request("handshake")
-send_request("set", { what = "hello", value = "world" })
+-- send_request("handshake")
+send_request("login", { base_req = {client_ip="127.0.0.1", os_type=1}, passwd = "456", user_name = "123" })
 while true do
 	dispatch_package()
 	local cmd = socket.readstdin()
