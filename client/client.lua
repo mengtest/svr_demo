@@ -5,18 +5,24 @@ package.path = "lualib/?.lua;proto/?.lua;"
 --	error "Use lua 5.3"
 --end
 
-local socket = require "clientsocket"
+local socket = require "socket"
 local proto = require "proto"
 local sproto = require "sproto"
 
 local host = sproto.new(proto.s2c):host "package"
 local request = host:attach(sproto.new(proto.c2s))
 
-local fd = assert(socket.connect("127.0.0.1", 8888))
+local fd = socket:tcp()
+assert(fd:connect4("127.0.0.1", 8888))
+--fd:settimeout(0)
+print(fd:getstats())
+local response,receive_status=fd:receive(1024)
+print(response,receive_status)
+
 
 local function send_package(fd, pack)
 	local package = string.pack(">s2", pack)
-	socket.send(fd, package)
+	fd:send(package)
 end
 
 local function unpack_package(text)
@@ -38,7 +44,7 @@ local function recv_package(last)
 	if result then
 		return result, last
 	end
-	local r = socket.recv(fd)
+	local r = fd:receive()
 	if not r then
 		return nil, last
 	end
@@ -177,17 +183,48 @@ end
 
 --send_request("handshake")
 --send_request("set", { what = "hello", value = "world" })
-send_request("login", { base_req = {client_ip="127.0.0.1", os_type=1}, passwd = "456", user_name = "123" })
-while true do
-	dispatch_package()
-	local cmd = socket.readstdin()
-	if cmd then
-		if cmd == "quit" then
-			send_request("quit")
-		else
-			send_request("get", { what = cmd })
-		end
-	else
-		socket.usleep(100)
-	end
-end
+--send_request("login", { base_req = {client_ip="127.0.0.1", os_type=1}, passwd = "456", user_name = "123" })
+--while true do
+--	dispatch_package()
+--	local cmd = ""
+--	if cmd then
+--		if cmd == "quit" then
+--			send_request("quit")
+--		end
+--	else
+--		--socket.usleep(100)
+--	end
+--end
+
+
+--while true do
+--	local recvt
+--	local all_fd = {fd}
+--	recvt, _, _ = socket.select(all_fd, nil, nil)
+--	for k,v in ipairs(recvt) do
+--		local line, err = fd:receive()
+--		print (line,err)
+--		if line == nil then
+--			print("close fd", fd)
+--			fd:close()
+--		else
+--			print("line" .. line)
+--			table.insert(all_fd, fd)
+--		end
+--	end
+--	--if #recvt > 0 then
+--	--	local response, receive_status = fd:receive()
+--	--	print(response, receive_status)
+--	--	if receive_status ~= "closed" then
+--	--		if response then
+--	--			print(response)
+--	--			recvt, sendt, status = socket.select({fd}, nil, 1)
+--	--		end
+--	--		print_request(1,response)
+--	--	else
+--	--		print("close fd")
+--	--		fd:close()
+--	--		break
+--	--	end
+--	--end
+--end 

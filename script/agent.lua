@@ -52,7 +52,6 @@ function GAME:login()
         local ret = skynet.call("AUTHSERVICE", "lua", "login",self.user_name)
         print('login auth ret ', self.user_name, self.passwd, ret)
         if not ret then
-            --net:getConn(player.fd):onLoginFailed("invalid account")
             skynet.call(WATCHDOG, "lua", "close", player.fd)
             return { base_resp = { code = -1, msg = "登陆失败" } }
         end
@@ -103,6 +102,7 @@ function CMD.start(conf)
 	skynet.fork(function()
 		while true do
 			send_package(send_request "heartbeat")
+			print("send heart")
 			skynet.sleep(500)
 		end
 	end)
