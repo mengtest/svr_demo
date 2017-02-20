@@ -9,12 +9,20 @@ local conf =
 	db = 0
 }
 
+local function start_db_service()
+	local db_service_cnt = tonumber(skynet.getenv "db_service_cnt")
+	for i = 1, db_service_cnt do
+		skynet.newservice("db_service", i)
+	end
+end
+
 skynet.start(function()
 	--local db = redis.connect(conf)
 	--db:set('A', 555)
 	--print(db:get('A'))
 	math.randomseed(os.time())
 	print("Server start")
+	start_db_service()
 	skynet.uniqueservice("protoloader")
 	local douniu_room = skynet.newservice("douniu_room")
 	local auth = skynet.newservice("auth")

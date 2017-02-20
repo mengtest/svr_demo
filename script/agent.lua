@@ -3,6 +3,7 @@ local netpack = require "netpack"
 local socket = require "socket"
 local sproto = require "sproto"
 local sprotoloader = require "sprotoloader"
+local new_dao = require "new_dao"
 
 local WATCHDOG
 local host
@@ -49,14 +50,32 @@ local function send_package(pack)
 end
 
 function GAME:login()
-        local ret = skynet.call("AUTHSERVICE", "lua", "login",self.user_name)
-        print('login auth ret ', self.user_name, self.passwd, ret)
-        if not ret then
-            skynet.call(WATCHDOG, "lua", "close", player.fd)
-            return { base_resp = { code = -1, msg = "登陆失败" } }
-        end
-	player.uid = uid
-	player.agent = skynet.self()
+--        local ret = skynet.call("AUTHSERVICE", "lua", "login",self.user_name)
+--        print('login auth ret ', self.user_name, self.passwd, ret)
+--        if not ret then
+--            skynet.call(WATCHDOG, "lua", "close", player.fd)
+--            return { base_resp = { code = -1, msg = "登陆失败" } }
+--        end
+--	player.uid = uid
+--	player.agent = skynet.self()
+	
+	-- TODO: 测试操作
+	local ok, res = new_dao.call("test", 1000)
+	if not ok then
+		print("call db_service fail, error: ", res)
+	end
+
+	local function dump(t)
+		for k, v in pairs(t) do
+			print('***', k, v)
+		end
+	end
+	
+	print('------db result')
+	for k, v in ipairs(res) do
+		print(k, dump(v))
+	end
+	
 	return { base_resp = { code = 0, msg = "登陆成功" } }
 end
 
