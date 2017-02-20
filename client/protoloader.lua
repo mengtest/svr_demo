@@ -2,7 +2,7 @@
 package.path = "./?.lua;".."./proto/?.lua;" .. package.path
 
 local skynet = require "skynet"
-local sprotoparser = require "sprotoparser"
+--local sprotoparser = require "sprotoparser"
 local sprotoloader = require "sprotoloader"
 local proto = require "proto"
 

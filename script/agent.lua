@@ -18,8 +18,16 @@ local fightsvr_inst
 
 function GAME:enter_room()
 	print("enter_room")
-	local r = skynet.call("DOUNIUSERVER", "lua", "enterRoom", self.what)
-	return { result = r }
+	local r = skynet.call("DOUNIUSERVER", "lua", "enterRoom", player)
+
+	local player_info = {
+		name = "sadf",
+		room_type = 1,
+		icon = "",
+		money = 998,
+	}
+	
+	return { base_resp = { code = 0, msg = "进房成功" }, room_id = 1, player_info = player_info }
 end
 
 function GAME:onPackCard()
@@ -60,7 +68,7 @@ function GAME:login()
 --	player.agent = skynet.self()
 	
 	-- TODO: 测试操作
-	local ok, res = new_dao.call("test", 1000)
+	local ok, res = new_dao.call("get_user_info", 1000)
 	if not ok then
 		print("call db_service fail, error: ", res)
 	end
@@ -121,7 +129,7 @@ function CMD.start(conf)
 	skynet.fork(function()
 		while true do
 			send_package(send_request "heartbeat")
-			print("send heart")
+			--print("send heart")
 			skynet.sleep(500)
 		end
 	end)

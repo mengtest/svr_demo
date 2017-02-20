@@ -1,9 +1,9 @@
 package.cpath = "luaclib/?.so"
 package.path = "lualib/?.lua;proto/?.lua;"
 
---if _VERSION ~= "Lua 5.3" then
---	error "Use lua 5.3"
---end
+if _VERSION ~= "Lua 5.3" then
+	error "Use lua 5.3"
+end
 
 local socket = require "socket"
 local proto = require "proto"
@@ -13,11 +13,11 @@ local host = sproto.new(proto.s2c):host "package"
 local request = host:attach(sproto.new(proto.c2s))
 
 local fd = socket:tcp()
-assert(fd:connect4("127.0.0.1", 8888))
+assert(fd:connect("127.0.0.1", 8888))
 --fd:settimeout(0)
 print(fd:getstats())
-local response,receive_status=fd:receive(1024)
-print(response,receive_status)
+--local response,receive_status=fd:receive(10)
+--print("response", response)
 
 
 local function send_package(fd, pack)
@@ -44,7 +44,7 @@ local function recv_package(last)
 	if result then
 		return result, last
 	end
-	local r = fd:receive()
+	local r = fd:receive(1)
 	if not r then
 		return nil, last
 	end
@@ -76,12 +76,12 @@ RpcMgr.send_request = send_request
 ------------ register interface begin -------
 
 function REQUEST:heartbeat(args)
-	print("on heartbeat")
-	if args then
-		for k,v in pairs(args) do
-			print(k,v)
-		end
-	end
+	--print("on heartbeat")
+	--if args then
+	--	for k,v in pairs(args) do
+	--		print(k,v)
+	--	end
+	--end
 end
 
 function RESPONSE:login(args)
@@ -89,6 +89,15 @@ function RESPONSE:login(args)
 	if args then
 		for k,v in pairs(args) do
 			print(k,v)
+		end
+	end
+end
+
+function RESPONSE:enter_room(args)
+	print("on enter_room")
+	if args then
+		for k,v in pairs(args) do
+			print(k,table.concat(v))
 		end
 	end
 end
@@ -183,18 +192,19 @@ end
 
 --send_request("handshake")
 --send_request("set", { what = "hello", value = "world" })
---send_request("login", { base_req = {client_ip="127.0.0.1", os_type=1}, passwd = "456", user_name = "123" })
---while true do
---	dispatch_package()
---	local cmd = ""
---	if cmd then
---		if cmd == "quit" then
---			send_request("quit")
---		end
---	else
---		--socket.usleep(100)
---	end
---end
+send_request("login", { base_req = {client_ip="127.0.0.1", os_type=1}, passwd = "456", user_name = "123" })
+send_request("enter_room", { base_req = {client_ip="127.0.0.1", room_type=1, room_id=0}, passwd = "456", user_name = "123" })
+while true do
+	dispatch_package()
+	local cmd = ""
+	if cmd then
+		if cmd == "quit" then
+			send_request("quit")
+		end
+	else
+		--socket.usleep(100)
+	end
+end
 
 
 --while true do
@@ -202,8 +212,8 @@ end
 --	local all_fd = {fd}
 --	recvt, _, _ = socket.select(all_fd, nil, nil)
 --	for k,v in ipairs(recvt) do
---		local line, err = fd:receive()
---		print (line,err)
+--		local line, err = fd:receive(5)
+--		print ("select line : ",line, "err:",err)
 --		if line == nil then
 --			print("close fd", fd)
 --			fd:close()
@@ -212,19 +222,19 @@ end
 --			table.insert(all_fd, fd)
 --		end
 --	end
---	--if #recvt > 0 then
---	--	local response, receive_status = fd:receive()
---	--	print(response, receive_status)
---	--	if receive_status ~= "closed" then
---	--		if response then
---	--			print(response)
---	--			recvt, sendt, status = socket.select({fd}, nil, 1)
---	--		end
---	--		print_request(1,response)
---	--	else
---	--		print("close fd")
---	--		fd:close()
---	--		break
---	--	end
---	--end
+----	--if #recvt > 0 then
+----	--	local response, receive_status = fd:receive()
+----	--	print(response, receive_status)
+----	--	if receive_status ~= "closed" then
+----	--		if response then
+----	--			print(response)
+----	--			recvt, sendt, status = socket.select({fd}, nil, 1)
+----	--		end
+----	--		print_request(1,response)
+----	--	else
+----	--		print("close fd")
+----	--		fd:close()
+----	--		break
+----	--	end
+----	--end
 --end 

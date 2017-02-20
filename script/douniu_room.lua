@@ -34,6 +34,7 @@ function DOUNIU:enterRoom(player)
 			status = 0 --0待机，1比赛中
 		}
 		table.insert(room_queue, v_room)
+		v_room = room_info
 	end
 
 	if v_room ~= nil then
