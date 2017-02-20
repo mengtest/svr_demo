@@ -68,9 +68,14 @@ function GAME:login()
 --	player.agent = skynet.self()
 	
 	-- TODO: 测试操作
-	local ok, res = new_dao.call("get_user_info", 1000)
+	local ok, res = new_dao.call("get_user_info", {user_name = self.user_name, passwd = self.passwd}
+	)
 	if not ok then
 		print("call db_service fail, error: ", res)
+	end
+
+	if res == nil then
+		ok = false
 	end
 
 	local function dump(t)
@@ -79,12 +84,17 @@ function GAME:login()
 		end
 	end
 	
+	print("self dump", dump(self))
 	print('------db result')
 	for k, v in ipairs(res) do
 		print(k, dump(v))
 	end
 	
-	return { base_resp = { code = 0, msg = "登陆成功" } }
+	if ok then
+		return { base_resp = { code = 0, msg = "登陆成功" } }
+	else
+		return { base_resp = { code = -1, msg = "登陆失败" } }
+	end
 end
 
 function GAME:startMatch(fight)

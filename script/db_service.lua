@@ -15,7 +15,7 @@ end
 
 function CMD.get_user_info(args)
 	print("get_user_info uid = ", args)
-	local res = mysqldb:query("select * from user_info where uid = " .. args)
+	local res = mysqldb:query("select * from user_info where user_name = " .. args.user_name .. " and passwd = "..args.passwd)
 	return res
 end
 
