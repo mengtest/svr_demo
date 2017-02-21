@@ -1,0 +1,31 @@
+.package {
+	type 0 : integer
+	session 1 : integer
+}
+
+heartbeat 1 {}
+
+perflop 2 {
+	request {
+		card_info 0 : *integer
+	}
+}
+
+.PlayerInfo {
+	name 0 : string
+	icon 1 : string #头像url
+	money 2 : integer 
+	odds 3 : integer #赔率
+	is_leader 4 : boolean #是不是庄
+}
+
+#同步房间内信息
+update_room_info 3  {
+	request {
+		room_id 0 : integer
+		room_odds 1 : integer
+		players 2 : *PlayerInfo
+		status 3 : integer #房间状态
+	}
+}
+
