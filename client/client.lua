@@ -19,6 +19,28 @@ print(fd:getstats())
 --local response,receive_status=fd:receive(10)
 --print("response", response)
 
+--打印table  
+local function print_t(root)  
+	local cache = {  [root] = "." }  
+	local function _dump(t,space,name)  
+		local temp = {}  
+		for k,v in pairs(t) do  
+			local key = tostring(k)  
+			if cache[v] then  
+				table.insert(temp,"+" .. key .. " {" .. cache[v].."}")  
+			elseif type(v) == "table" then  
+				local new_key = name .. "." .. key  
+				cache[v] = new_key  
+				table.insert(temp,"+" .. key .. _dump(v,space .. (next(t,k) and "|" or " " )..   
+				string.rep(" ",#key),new_key))  
+			else  
+				table.insert(temp,"+" .. key .. " [" .. tostring(v).."]")  
+			end  
+		end  
+		return table.concat(temp,"\n"..space)  
+	end  
+	print(_dump(root, "",""))  
+end  
 
 local function send_package(fd, pack)
 	local package = string.pack(">s2", pack)
@@ -84,31 +106,39 @@ function REQUEST:heartbeat(args)
 	--end
 end
 
+function REQUEST:update_room_info(args)
+	print("on update_room_info")
+	print_t(args)
+end
+
 function RESPONSE:login(args)
 	print("on login")
-	if args then
-		for k,v in pairs(args) do
-			print(k,v)
-		end
-	end
+	print_t(args)
+	--if args then
+	--	for k,v in pairs(args) do
+	--		print(k,table.concat(v))
+	--	end
+	--end
+end
+
+function RESPONSE:leave_room(args)
+	print("on leave_room")
+	print_t(args)
 end
 
 function RESPONSE:enter_room(args)
 	print("on enter_room")
-	if args then
-		for k,v in pairs(args) do
-			print(k,table.concat(v))
-		end
-	end
+	print_t(args)
+	--if args then
+	--	for k,v in pairs(args) do
+	--		print(k,v)
+	--	end
+	--end
 end
 
 ------------ s2c ---------------------
 local function handle_request (name, args, response)
-    print ("--- 【S>>C】, request from server:", name)
-
-    -- if args then
-    --     dump (args)
-    -- end
+    --print ("--- 【S>>C】, request from server:", name)
 
     local f = REQUEST[name]
     if f then
@@ -145,20 +175,12 @@ local last = ""
 
 local function print_request(name, args)
 	print("REQUEST", name)
-	if args then
-		for k,v in pairs(args) do
-			print(k,v)
-		end
-	end
+	print_t(args)
 end
 
 local function print_response(session, args)
 	print("RESPONSE", session)
-	if args then
-		for k,v in pairs(args) do
-			print(k,v)
-		end
-	end
+	print_t(args)
 end
 
 local function handle_message (t, ...)
@@ -193,7 +215,8 @@ end
 --send_request("handshake")
 --send_request("set", { what = "hello", value = "world" })
 send_request("login", { base_req = {client_ip="127.0.0.1", os_type=1}, passwd = "456", user_name = "123" })
-send_request("enter_room", { base_req = {client_ip="127.0.0.1", room_type=1, room_id=0}, passwd = "456", user_name = "123" })
+send_request("enter_room", { base_req = {client_ip="127.0.0.1", os_type=1} })
+--send_request("leave_room", { base_req = {client_ip="127.0.0.1", os_type=1} })
 while true do
 	dispatch_package()
 	local cmd = ""
@@ -205,36 +228,3 @@ while true do
 		--socket.usleep(100)
 	end
 end
-
-
---while true do
---	local recvt
---	local all_fd = {fd}
---	recvt, _, _ = socket.select(all_fd, nil, nil)
---	for k,v in ipairs(recvt) do
---		local line, err = fd:receive(5)
---		print ("select line : ",line, "err:",err)
---		if line == nil then
---			print("close fd", fd)
---			fd:close()
---		else
---			print("line" .. line)
---			table.insert(all_fd, fd)
---		end
---	end
-----	--if #recvt > 0 then
-----	--	local response, receive_status = fd:receive()
-----	--	print(response, receive_status)
-----	--	if receive_status ~= "closed" then
-----	--		if response then
-----	--			print(response)
-----	--			recvt, sendt, status = socket.select({fd}, nil, 1)
-----	--		end
-----	--		print_request(1,response)
-----	--	else
-----	--		print("close fd")
-----	--		fd:close()
-----	--		break
-----	--	end
-----	--end
---end 

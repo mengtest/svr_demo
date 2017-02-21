@@ -42,9 +42,9 @@ local function transCard(card_num)
 	return card_num % 13 + 1 
 end
 
-local function broadcast(msg)
+local function broadcast(name,pkg)
 	for player in pairs(player_lst) do
-		skynet.call(player.agent, "game", "send_package", msg)
+		skynet.call(player.agent, "lua", "send_pack_cli", name, pkg)
 	end
 end
 
@@ -55,12 +55,28 @@ function DouNiuEvHandler:checkStatus()
 			--时间
 			status_begin = os.time()
 
+			local max_odds = 0
+			local max_rank_num = 0
+			local leader = nil
 			--抢庄结果
-			for _,player in ipairs(player_lst) do
-				player.is_leader = 1
-				break
+			for _,player in pairs(player_lst) do
+				if player.odds >= max_odds then
+					if player.odds > max_odds then
+						max_odds = player.odds 
+						leader = player
+						max_rank_num = meth.rank(100)
+					else
+						local rank_num = meth.rank(100)
+						if rank_num > max_rank_num then
+							max_rank_num = rank_num
+							leader = player
+						end
+					end
+				end
 			end
 
+			leader.is_leader = true
+			--广播leader信息
 			room_status = 2
 		end
 	end
@@ -74,7 +90,8 @@ function DouNiuEvHandler:checkStatus()
 		if os.time() - status_beigin > 5 then
 			--时间
 			status_begin = os.time()
-			for _,player in ipairs(player_lst) do
+			for _,player in pairs(player_lst) do
+				--没选的全部设为5
 				if player.odds == 0 then
 					player.odds = 5
 				end
@@ -95,32 +112,34 @@ function DouNiuEvHandler:checkStatus()
 	skynet.timeout(500, DouNiuEvHandler.checkStatus)
 end
 
-function DouNiuEvHandler:onStart()
+function DouNiuEvHandler:onStart(players)
     print('DouNiuEvHandler onStart:')
 	for i = 1, i <= 52, 1 do
 		table.insert(card_lst, i)
 	end	
+
+	DouNiuEvHandler:onShuffle()
 end
 
 --洗牌并发4张牌
 function DouNiuEvHandler:onShuffle()
     print('DouNiuEvHandler onShuffle:')
 
-	for k,card in ipairs(card_lst) do
+	for k,card in pairs(card_lst) do
 		local tmp =  card_lst[k]
 		local rank_num = math.random(52)
 		card_lst[k] = card_lst[rank_num]
 		card_lst[rank_num] = tmp
 	end	
 
-	for k,player in ipairs(player_lst) do
+	for k,player in pairs(player_lst) do
 		for i = 1, i <= 4, 1 do
 			table.insert(player.hand_card_lst, card_lst[i])
 		end
 
 		--推送发牌消息
-		--skynet.call(player.agent, "game", "", player_card_lst) --战斗
-		table.remove(card_lst,0,4)
+		skynet.call(player.agent, "lua", "send_pack_cli", "perflop", player_card_lst) --战斗
+		table.remove(card_lst,1,4)
 	end
 end
 
@@ -148,7 +167,7 @@ end
 
 --出牌,检测有没牛
 function DouNiuEvHandler:onPackCard(uid, pack_type, ret_card_lst)
-    print('DouNiuEvHandler onPackCard:')
+    rint('DouNiuEvHandler onPackCard:')
 	local sum = 0
 	local is_niu = false
 
@@ -180,7 +199,7 @@ end
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         print('douniu fight service !')
-        local f = g_battle[cmd]
+        local f = DouNiuEvHandler[cmd]
         if f then
             local ok, result = pcall(f, g_battle, ...)
             if not ok then
