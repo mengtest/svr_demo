@@ -27,6 +27,14 @@ function CMD.save_user_info(args)
 	return res
 end
 
+--增量更新金钱
+function CMD.update_user_money(uid, add_val)
+	print("save_user_info uid = ", uid, " add val:", add_val)
+	local res = mysqldb:query("update user_info set money = money + where uid = '" .. uid)
+	--print("select uid, money, icon, nick_name from user_info where user_name = '" .. args.user_name .. "' and passwd = '"..args.passwd.."' ")
+	return res
+end
+
 skynet.start(function()
 	skynet.dispatch("lua", function(_,_, command, ...)
 		local f = CMD[command]

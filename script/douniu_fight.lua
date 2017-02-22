@@ -112,6 +112,7 @@ end
 
 --斗牛流程控制器
 function DouNiuEvHandler:checkStatus()
+	--print("on check status")
 	if room_status == enum_room_status.ready then
 		if get_table_nums(player_lst) >= 2 then
 			room_status = enum_room_status.ask_leader
@@ -225,7 +226,7 @@ function DouNiuEvHandler:checkStatus()
 				}
 				)
 			end
-			--DouNiuEvHandler:onGameOver()
+			DouNiuEvHandler:onGameOver()
 			room_status = enum_room_status.ready
 			update_game_process()
 
@@ -247,6 +248,7 @@ function DouNiuEvHandler:onStart(room_info)
 	room = room_info
 	room_leader = nil
 	room_status = enum_room_status.ready
+	player_lst = {}
 
 	for k,p in pairs(room.player_lst) do
 		player_lst[p.uid] = initRoomPlayer(p)
@@ -330,7 +332,7 @@ end
 --游戏结束
 function DouNiuEvHandler:onGameOver()
 	print('DouNiuEvHandler:onGameOver')
-	skynet.exit()
+	skynet.call("DOUNIUSERVER", "lua", "unlock_room", room.room_id)
 end
 
 skynet.start(function()
