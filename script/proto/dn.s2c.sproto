@@ -17,15 +17,43 @@ perflop 2 {
 	money 2 : integer 
 	odds 3 : integer #赔率
 	is_leader 4 : boolean #是不是庄
+	uid 5 : integer #uid
 }
 
-#同步房间内信息
+#同步房间内信息(有人加入房间内时推送)
 update_room_info 3  {
 	request {
 		room_id 0 : integer
-		room_odds 1 : integer
+		room_odds 1 : integer #房间基本筹码
 		players 2 : *PlayerInfo
 		status 3 : integer #房间状态
 	}
 }
 
+.PlayerResult{
+	uid 0 : integer
+	result 1 : integer #正是赚，负是输
+	hand_card_lst 2 : *integer #手牌
+	niu_num 3 : integer #牛几
+}
+
+#牛结果
+on_game_result 4  {
+	request {
+		room_id 0 : integer
+		room_odds 1 : integer
+		player_ret_lst 2 : *PlayerResult
+	}
+}
+
+#比赛进度同步
+update_game_process 5 {
+	request {
+		room_id 0 : integer
+		room_odds 1 : integer
+		status 2 : integer     #比赛进度1准备2开始3抢庄4选倍率5计算结果
+		leader_uid 3 : integer #庄uid
+		begin_ts 4 : integer
+		proc_interval 5 : integer
+	}
+}

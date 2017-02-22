@@ -82,3 +82,13 @@ logout 6 {
 		base_resp 0 : BaseResp
 	}
 }
+
+set_odds 7 {
+	request {
+		base_req 0 : BaseReq
+		odds 1 : integer #赔率
+	}
+	response {
+		base_resp 0 : BaseResp
+	}
+}

@@ -39,6 +39,14 @@ local function make_room_info(room)
 	}
 end
 
+local function get_table_nums(tb)
+	local num = 0
+	for k,v in pairs(tb) do
+		num = num + 1
+	end
+	return num
+end
+
 function DOUNIU:enter_room(player)
 	local v_room = nil
 	for k,v in pairs(room_queue) do
@@ -50,13 +58,13 @@ function DOUNIU:enter_room(player)
 	end
 
 	if v_room == nil then
-		max_room_idx = max_room_idx + 1
 		local room_info = {
-			room_odds = 1, --倍率
+			room_odds = 25, --房间基本码
 			player_lst = {}, --1
 			room_id = max_room_idx,
 			status = 0 --0待机，1比赛中
 		}
+		max_room_idx = max_room_idx + 1
 		--table.insert(room_queue, room_info)
 		room_queue[room_info.room_id] = room_info
 		v_room = room_info
@@ -92,6 +100,16 @@ function DOUNIU:leave_room(room_id, uid)
 	for k,v in pairs(room_queue) do
 		if v.room_id == room_id then
 			v.player_lst[uid] = nil
+
+			for uid, room_player in pairs(v_room.player_lst) do
+				print("update room info")
+				--if uid ~= player.uid then
+				--skynet.call(room_player.agent, "lua", "update_room_info", v_room)
+				--end
+				skynet.call(room_player.agent, "lua",
+				"send_pack_cli", "update_room_info",
+				make_room_info(v_room))
+			end
 			return 0
 		end
 	end
@@ -100,23 +118,13 @@ function DOUNIU:leave_room(room_id, uid)
 	return -1
 end
 
-function DOUNIU:matchLoop()
-	for k,v in ipairs(room_queue) do
-		print("room "..k.." player size "..#v.player_lst)
-		if #v.player_lst > 2 then
-			print("room "..k.." begin match ")
-			--大于两个人可以开游戏
-			if #v_room.player_lst > 2 then
-				DOUNIU:stratGame(v_room)
-			end
-		end
-	end
-	skynet.timeout(500, DOUNIU.matchLoop)
-end
-
 function DOUNIU:startGame(v_room)
 	if v_room.status ~= 1 then
 		print("start game, room_id: ", v_room.room_id)
+		local fight_ins = skynet.newservice "douniu_fight"
+		v_room.fight_ins = fight_ins
+		skynet.call(fight_ins, "lua", "onStart", v_room )
+		v_room.status = 1
 		--local fightsvr_inst = skynet.newservice("douniu_fight")
 		--for player in ipairs(v_room.player) do
 		--	skynet.call(player.agent, "game", "onFightStart", fightsvr_inst)
@@ -128,9 +136,24 @@ function DOUNIU:startGame(v_room)
 	--skynet.call(player_2.agent, "game", "onFightStart", fightsvr_inst)
 end
 
-function DOUNIU:start(player)
-    table.insert(match_queue, player)
-    print('[DOUNIU] start', player.uid, player)
+function DOUNIU:matchLoop()
+	for k,v_room in pairs(room_queue) do
+		if v_room.status == 0  then
+			local room_num = get_table_nums(v_room.player_lst)
+			print("room "..v_room.room_id.." player size "..room_num)
+			if room_num >= 2 then
+				print("room "..v_room.room_id.." begin match ")
+				--大于两个人可以开游戏
+				DOUNIU:startGame(v_room)
+			end
+		end
+	end
+	skynet.timeout(500, DOUNIU.matchLoop)
+end
+
+function DOUNIU:onPackCard(room_id, uid, card_info)
+    --table.insert(match_queue, player)
+    --print('[DOUNIU] start', player.uid, player)
 end
 
 skynet.start(function()

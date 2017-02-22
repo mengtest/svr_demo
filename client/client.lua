@@ -106,34 +106,39 @@ function REQUEST:heartbeat(args)
 	--end
 end
 
+function REQUEST:perflop(args)
+	print("on perflop----------------------------")
+	print_t(args)
+end
+
+function REQUEST:on_game_result(args)
+	print("on_game_result------------------------")
+	print_t(args)
+end
+
 function REQUEST:update_room_info(args)
-	print("on update_room_info")
+	print("on update_room_info-------------------------")
+	print_t(args)
+end
+
+function REQUEST:update_game_process(args)
+	print("on update_game_process----------------------")
 	print_t(args)
 end
 
 function RESPONSE:login(args)
-	print("on login")
+	print("on login-----------------------")
 	print_t(args)
-	--if args then
-	--	for k,v in pairs(args) do
-	--		print(k,table.concat(v))
-	--	end
-	--end
 end
 
 function RESPONSE:leave_room(args)
-	print("on leave_room")
+	print("on leave_room--------------------------------")
 	print_t(args)
 end
 
 function RESPONSE:enter_room(args)
-	print("on enter_room")
+	print("on enter_room--------------------------------")
 	print_t(args)
-	--if args then
-	--	for k,v in pairs(args) do
-	--		print(k,v)
-	--	end
-	--end
 end
 
 ------------ s2c ---------------------
@@ -215,7 +220,14 @@ end
 --send_request("handshake")
 --send_request("set", { what = "hello", value = "world" })
 send_request("login", { base_req = {client_ip="127.0.0.1", os_type=1}, passwd = "456", user_name = "123" })
+os.execute("sleep " .. 2)
 send_request("enter_room", { base_req = {client_ip="127.0.0.1", os_type=1} })
+--os.execute("sleep " .. 10)
+--send_request("get_leader", { base_req = {client_ip="127.0.0.1", os_type=1}, odds = 4 })
+--os.execute("sleep " .. 5)
+--send_request("set_odds", { base_req = {client_ip="127.0.0.1", os_type=1}, odds = 5 })
+--os.execute("sleep " .. 10)
+--send_request("pack_card", { base_req = {client_ip="127.0.0.1", os_type=1}, card_info = {1,3,5} })
 --send_request("leave_room", { base_req = {client_ip="127.0.0.1", os_type=1} })
 while true do
 	dispatch_package()

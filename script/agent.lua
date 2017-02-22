@@ -42,10 +42,9 @@ local function print_t(root)
 end
 
 local function check_login()
-	--if player.login == nil or player.login == false then
-	--	return false
-	--end
-	return true
+	if player.login == nil or player.login == false then
+		assert(false, "player_fd:"..player.fd.. " has not login")
+	end
 end
 
 local function make_resp(errcode, msg)
@@ -83,11 +82,19 @@ function GAME:enter_room()
 	end
 end
 
-function GAME:onPackCard()
-	print("set", self.what, self.value)
+function GAME:set_odds()
 	check_login()
-	local r = skynet.call("DOUNIUSERVER", "lua", "onPackCard", self.what, self.value)
+	print("set_odds")
+	print_t(self)
+	local r = skynet.call(room.fight_ins, "lua", "onSetOdds", player.uid, self.odds)
+	return {base_resp=make_resp(0,"")}
+end
 
+function GAME:pack_card()
+	check_login()
+	print("pack_card")
+	print_t(self)
+	local r = skynet.call(room.fight_ins, "lua", "onPackCard", player.uid, self.card_info)
 	return {base_resp=make_resp(0,"")}
 end
 
@@ -122,9 +129,9 @@ local function send_package(pack)
 end
 
 function GAME:login()
-	if true == check_login() then
-		--顶下线
-	end
+	--if true == check_login() then
+	--	--顶下线
+	--end
 
 	local ok, res = new_dao.call("get_user_info",
 	{user_name = self.user_name, passwd = self.passwd})
