@@ -2,6 +2,30 @@ local skynet = require "skynet"
 local math = require "math"
 local logger = require "logger"
 
+enum_game_status_inteval = 
+{
+	3,5,5,10,10
+}
+
+enum_room_status = 
+{
+	ready = 1,
+	ask_leader = 2,
+	select_odds = 3,
+	game_end = 4,
+}
+
+function get_table_nums(tb) 
+	if tb == nil then
+		return 0
+	end
+
+	local cnt = 0
+	for k, v in pairs(tb) do
+		cnt = cnt + 1
+	end
+	return cnt
+end
 
 --返回牛几和最大的牌是啥
 function parse_card_info(card_lst)
@@ -45,6 +69,10 @@ function parse_card_info(card_lst)
 end
 
 function transCard(card_num)
+	if card_num == nil then
+		return 0
+	end
+
 	if (card_num - 1) % 13 + 1 >= 10 then
 		return 10
 	end
@@ -63,4 +91,15 @@ function get_card_odds(niu_num)
 	end
 
 	return 1
+end
+
+function broadcast_room_player(to_player_lst, msg_name, msg)
+	for k,p in pairs(to_player_lst) do
+		if p and p.agent then
+			skynet.call(p.agent, "lua",
+			"send_pack_cli", msg_name,
+			msg
+			)
+		end
+	end
 end

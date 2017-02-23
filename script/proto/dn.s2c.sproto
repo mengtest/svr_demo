@@ -51,9 +51,24 @@ update_game_process 5 {
 	request {
 		room_id 0 : integer
 		room_odds 1 : integer
-		status 2 : integer     #比赛进度1准备2开始3抢庄4选倍率5计算结果
+		status 2 : integer     #比赛进度1准备2抢庄3选倍率4计算结果
 		leader_uid 3 : integer #庄uid
 		begin_ts 4 : integer
 		proc_interval 5 : integer
+	}
+}
+
+#通知赔率
+.PlayerOdds
+{
+	uid 0 : integer
+	odds 1 : integer 
+	hand_card_ready 2 : boolean
+}
+
+on_odds_change 6 {
+	request {
+		player_odds_lst 0 : *PlayerOdds
+		room_status 1 : integer
 	}
 }

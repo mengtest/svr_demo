@@ -16,6 +16,10 @@ local room_queue = {} --待机房
 local running_room_queue = {} --比赛中的房间
 
 local function make_room_info(room)
+	if room == nil then
+		return nil
+	end
+
 	local players = {}
 	for uid,player in pairs(room.player_lst) do
 		table.insert(players, 
@@ -25,6 +29,7 @@ local function make_room_info(room)
 			name = player.nick_name,
 			odds = 0,
 			is_leader = false,
+			uid = player.uid,
 		}
 		)
 	end
@@ -51,7 +56,7 @@ function DOUNIU:enter_room(player)
 	local v_room = nil
 	for k,v in pairs(room_queue) do
 		print("room "..k.." player size "..#v.player_lst)
-		if #v.player_lst < MAX_PLAYER then
+		if  v.status == 0 and #v.player_lst < MAX_PLAYER then
 			v_room = v
 			break
 		end
@@ -62,7 +67,8 @@ function DOUNIU:enter_room(player)
 			room_odds = 25, --房间基本码
 			player_lst = {}, --1
 			room_id = max_room_idx,
-			status = 0 --0待机，1比赛中
+			status = 0, --0待机，1比赛中
+			room_begin_ts = os.time()
 		}
 		max_room_idx = max_room_idx + 1
 		--table.insert(room_queue, room_info)
@@ -108,7 +114,7 @@ function DOUNIU:leave_room(room_id, uid)
 				--end
 				skynet.call(room_player.agent, "lua",
 				"send_pack_cli", "update_room_info",
-				make_room_info(v_room))
+				make_room_info(v))
 			end
 			return 0
 		end
@@ -125,6 +131,9 @@ function DOUNIU:startGame(v_room)
 			local fight_ins = skynet.newservice "douniu_fight"
 			v_room.fight_ins = fight_ins
 		end
+		for uid, p in pairs(v_room.player_lst) do
+			skynet.call(p.agent, "lua", "set_fight", v_room.fight_ins)
+		end
 		skynet.call(v_room.fight_ins, "lua", "onStart", v_room )
 		v_room.status = 1
 		--local fightsvr_inst = skynet.newservice("douniu_fight")
@@ -140,14 +149,20 @@ end
 
 function DOUNIU:matchLoop()
 	for k,v_room in pairs(room_queue) do
-		print("match loop room_id :"..v_room.room_id.. " status:".. v_room.status)
+		--print("match loop room_id :"..v_room.room_id.. " status:".. v_room.status)
 		if v_room.status == 0  then
 			local room_num = get_table_nums(v_room.player_lst)
 			print("room "..v_room.room_id.." player size "..room_num)
-			if room_num >= 2 then
+			if room_num >= 2 and os.time() - v_room.room_begin_ts > 10 then
 				print("room "..v_room.room_id.." begin match ")
 				--大于两个人可以开游戏
 				DOUNIU:startGame(v_room)
+			else
+				v_room.fight_ins = nil
+			end
+
+			if room_num == 0 then
+				room_queue[k] = nil
 			end
 		end
 	end
@@ -163,6 +178,10 @@ function DOUNIU:unlock_room(room_id)
 	local u_room = room_queue[room_id]
 	if u_room ~= nil then
 		u_room.status = 0
+		u_room.room_begin_ts = os.time()
+		for uid,p in pairs(u_room.player_lst) do
+			skynet.call(p.agent, "lua", "set_fight", nil)
+		end
 	end
 end
 

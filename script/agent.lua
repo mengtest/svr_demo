@@ -52,7 +52,7 @@ local function make_resp(errcode, msg)
 end
 
 local function make_player(player)
-	return {name = player.nick_name, icon = player.icon, money = player.money }
+	return {name = player.nick_name, icon = player.icon, money = player.money, uid = player.uid }
 end
 
 function GAME:enter_room()
@@ -65,14 +65,9 @@ function GAME:enter_room()
 		for _, p in pairs(v_room.player_lst) do
 			table.insert(
 			player_lst,
-			{
-				name = p.nick_name,
-				icon = p.icon,
-				money = p.money,
-			}
+			make_player(p)
 			)
-			--print_t(p)
-			print_t(player_lst)
+			--print_t(player_lst)
 		end
 
 		room = v_room
@@ -86,21 +81,35 @@ function GAME:set_odds()
 	check_login()
 	print("set_odds")
 	print_t(self)
-	local r = skynet.call(room.fight_ins, "lua", "onSetOdds", player.uid, self.odds)
-	return {base_resp=make_resp(0,"")}
+	if room.fight_ins ~= nil then
+		local r = skynet.call(room.fight_ins, "lua", "onSetOdds", player.uid, self.odds)
+		return {base_resp=make_resp(0,"")}
+	else
+		return {base_resp=make_resp(-1,"无效的操作")}
+	end
 end
 
 function GAME:pack_card()
 	check_login()
 	print("pack_card")
 	print_t(self)
-	local r = skynet.call(room.fight_ins, "lua", "onPackCard", player.uid, self.card_info)
-	return {base_resp=make_resp(0,"")}
+	if room.fight_ins ~= nil then
+		local r = skynet.call(room.fight_ins, "lua", "onPackCard", player.uid, self.card_info)
+		return {base_resp=make_resp(0,"ok")}
+	else
+		return {base_resp=make_resp(-1,"无效操作")}
+	end
 end
 
 function GAME:get_leader()
 	check_login()
-	return { msg = "Welcome to skynet, I will send heartbeat every 5 sec." }
+	if room.fight_ins ~= nil then
+		local r = skynet.call(room.fight_ins, "lua", "onGetLeader", player.uid, self.odds)
+		return {base_resp=make_resp(0,"ok")}
+	else
+		return {base_resp=make_resp(-1,"无效的操作")}
+	end
+	return { base_resp = { code = 0, msg = "ok" } }
 end
 
 function GAME:leave_room()
@@ -172,6 +181,14 @@ function GAME:startMatch(fight)
 	--local ret = skynet.call("DOUNIUSERVE", "lua", "start", player) 
 		--if ret == true then
 	--end
+end
+
+function CMD.set_fight(fight_ins)
+	if room == nil then
+		return false
+	end
+
+	room.fight_ins = fight_ins
 end
 
 function CMD.send_pack_cli(name, pkg)

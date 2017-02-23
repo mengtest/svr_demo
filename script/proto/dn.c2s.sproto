@@ -17,6 +17,7 @@
 	name 0 : string
 	icon 1 : string #头像url
 	money 2 : integer 
+	uid 3 : integer
 }
 
 enter_room 1 {
