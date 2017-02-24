@@ -28,11 +28,18 @@ function CMD.save_user_info(args)
 end
 
 --增量更新金钱
-function CMD.update_user_money(uid, add_val)
-	print("save_user_info uid = ", uid, " add val:", add_val)
-	local res = mysqldb:query("update user_info set money = money + where uid = '" .. uid)
+function CMD.update_user_money(args)
+	local uid = args.uid
+	local add_val = args.add_val
+	if add_val ~= nil and uid ~= nil then
+		print("save_user_info uid = ", uid, " add val:", add_val)
+		sql = string.format("update user_info set money = money + %d where uid = %d", add_val, uid)
+		local res = mysqldb:query(sql)
+		print (sql)
+		return res
+	end
 	--print("select uid, money, icon, nick_name from user_info where user_name = '" .. args.user_name .. "' and passwd = '"..args.passwd.."' ")
-	return res
+	return nil
 end
 
 skynet.start(function()

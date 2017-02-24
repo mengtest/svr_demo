@@ -2,6 +2,7 @@ local skynet = require "skynet"
 local math = require "math"
 local logger = require "logger"
 local f_helper = require "fight_helper"
+local new_dao = require "new_dao"
 
 --斗牛战斗信息
 local DouNiuEvHandler = {} --事件表
@@ -161,13 +162,13 @@ function DouNiuEvHandler:checkStatus()
 			local max_rank_num = 0
 			local leader = nil
 
-			local notify_user_lst = {}
-			for v,player in pairs(player_lst) do
-				if player.odds == 0 and player.send_odds == false then
-					table.insert(notify_user_lst, player.uid)
-				end
-			end
-			send_user_odds(notify_user_lst)
+			--local notify_user_lst = {}
+			--for v,player in pairs(player_lst) do
+			--	if player.odds == 0 and player.send_odds == false then
+			--		table.insert(notify_user_lst, player.uid)
+			--	end
+			--end
+			--send_user_odds(notify_user_lst)
 
 			--抢庄结果
 			for uid,player in pairs(player_lst) do
@@ -208,24 +209,24 @@ function DouNiuEvHandler:checkStatus()
 	end
 
 	if room_status == enum_room_status.select_odds then
-		print("on select_odds")
+		print("on select_odds staus")
 
-		local notify_user_lst = {}
+		--local notify_user_lst = {}
 		local go_next_status = true
 		for v,player in pairs(player_lst) do
 			if player.odds == 0 then
 				go_next_status = false
 			end
 
-			if player.odds ~= 0 and player.send_odds == false then
-				table.insert(notify_user_lst, player.uid)
-				player.send_odds = true
-			end
+			--if player.odds ~= 0 and player.send_odds == false then
+			--	table.insert(notify_user_lst, player.uid)
+			--	player.send_odds = true
+			--end
 		end
 
-		if get_table_nums(notify_user_lst) > 0 then
-			send_user_odds(notify_user_lst)
-		end
+		--if get_table_nums(notify_user_lst) > 0 then
+		--	send_user_odds(notify_user_lst)
+		--end
 
 
 		if go_next_status or os.time() - status_begin > enum_game_status_inteval[room_status] then
@@ -267,8 +268,8 @@ function DouNiuEvHandler:checkStatus()
 					local leader = room_leader
 					local cp_ret = compare_hand_card(player,leader) 
 					local stake = player.odds * leader.odds * room.room_odds
-					print("#########uid 1", player.uid, " odds: ", player.odds, " room_odds: ", room.room_odds)
-					print("#########uid 2", leader.uid, " odds: ", leader.odds, " room_odds: ", room.room_odds)
+					--print("#########uid 1", player.uid, " odds: ", player.odds, " room_odds: ", room.room_odds)
+					--print("#########uid 2", leader.uid, " odds: ", leader.odds, " room_odds: ", room.room_odds)
 					if cp_ret == true then
 						stake = stake * get_card_odds(player.niu_num)
 						player.win_money = player.win_money + stake
@@ -297,6 +298,13 @@ function DouNiuEvHandler:checkStatus()
 					niu_num = p.niu_num,
 				}
 				)
+
+				--存db
+				local ok, res = new_dao.call("update_user_money",
+				{uid = p.uid , add_val = p.win_money})
+				if not ok then
+					print("call db_service fail, error: ", res)
+				end
 			end
 
 			broadcast_room_player(room.player_lst, "on_game_result",
@@ -412,7 +420,7 @@ function DouNiuEvHandler:onGetLeader(uid, odds)
 	if player ~= nil then
 		if get_leader_limit[odds] == true then
 			player.odds = odds
-			--send_user_odds({player.uid})
+			send_user_odds({uid})
 			print('##########DouNiuEvHandler uid: ', uid, 'onGetLeader: ', player.odds)
 			return 0
 		end
@@ -424,13 +432,12 @@ end
 function DouNiuEvHandler:onSetOdds(uid, odds)
     print('DouNiuEvHandler onSetOdds:'..odds)
 
-	if room_status ~= enum_room_status.set_odds then
-		return -1
+	if room_status ~= enum_room_status.select_odds then
+		return false
 	end
 
 	local player = getPlayer(uid)
 	if player == nil then
-		print('onSetOdds find not player uid:', uid)
 		return false
 	end
 
@@ -446,8 +453,12 @@ function DouNiuEvHandler:onSetOdds(uid, odds)
 		return false
 	end
 
+	if room_leader.uid == uid then
+		return false
+	end
+
 	player.odds = odds
-	--send_user_odds({player.uid})
+	send_user_odds({uid})
 	return true
 end
 

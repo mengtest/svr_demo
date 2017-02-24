@@ -10,7 +10,7 @@ local match_queue = {}
 --local CRoom = class() --房间信息
 
 local DOUNIU = {}
-local MAX_PLAYER = 6
+local MAX_PLAYER = 5
 local max_room_idx = 1
 local room_queue = {} --待机房
 local running_room_queue = {} --比赛中的房间

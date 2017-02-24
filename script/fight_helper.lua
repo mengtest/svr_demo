@@ -52,8 +52,8 @@ function parse_card_info(card_lst)
 	for i = 1, 5, 1 do
 		if card_lst[i] > max_card then
 			max_card = card_lst[i]
-			sum = sum + transCard(card_lst[i])
 		end
+		sum = sum + transCard(card_lst[i])
 	end
 
 	if has_niu == true then
