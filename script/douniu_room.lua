@@ -11,7 +11,7 @@ local match_queue = {}
 
 local DOUNIU = {}
 local MAX_PLAYER = 5
-local max_room_idx = 1
+local max_room_idx = 1000
 local room_queue = {} --待机房
 local running_room_queue = {} --比赛中的房间
 
@@ -52,11 +52,23 @@ local function get_table_nums(tb)
 	return num
 end
 
+function DOUNIU:create_room(odds, player)
+	local room_info = {
+		room_odds = odds, --房间基本码
+		player_lst = {player}, --1
+		room_id = max_room_idx,
+		status = 0, --0待机，1比赛中
+		room_begin_ts = os.time()
+	}
+	max_room_idx = max_room_idx + 1
+	room_queue[room_info.room_id] = room_info
+end
+
 function DOUNIU:enter_room(player)
 	local v_room = nil
 	for k,v in pairs(room_queue) do
-		print("room "..k.." player size "..#v.player_lst)
-		if  v.status == 0 and #v.player_lst < MAX_PLAYER then
+		print("room "..k.." player size "..get_table_nums(v.player_lst))
+		if  v.status == 0 and get_table_nums(v.player_lst) < MAX_PLAYER then
 			v_room = v
 			break
 		end
@@ -106,6 +118,7 @@ function DOUNIU:leave_room(room_id, uid)
 	for k,v in pairs(room_queue) do
 		if v.room_id == room_id then
 			v.player_lst[uid] = nil
+			skynet.call(v.fight_ins, "lua", "onKickOut", uid)
 
 			for uid, room_player in pairs(v.player_lst) do
 				print("update room info")

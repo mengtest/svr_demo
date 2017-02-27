@@ -4,6 +4,7 @@ local socket = require "socket"
 local sproto = require "sproto"
 local sprotoloader = require "sprotoloader"
 local new_dao = require "new_dao"
+local logger = require "logger"
 
 local WATCHDOG
 local host
@@ -15,31 +16,6 @@ local REQUEST = {}
 local GAME = {}
 local player = {}
 local room = nil
-
---打印table
-local function print_t(root)
-	if root ~= nil then
-		local cache = {  [root] = "." }
-		local function _dump(t,space,name)
-			local temp = {}
-			for k,v in pairs(t) do
-				local key = tostring(k)
-				if cache[v] then
-					table.insert(temp,"+" .. key .. " {" .. cache[v].."}")
-				elseif type(v) == "table" then
-					local new_key = name .. "." .. key
-					cache[v] = new_key
-					table.insert(temp,"+" .. key .. _dump(v,space .. (next(t,k) and "|" or " " ).. 
-					string.rep(" ",#key),new_key))
-				else
-					table.insert(temp,"+" .. key .. " [" .. tostring(v).."]")
-				end
-			end
-			return table.concat(temp,"\n"..space)
-		end
-		print(_dump(root, "",""))
-	end
-end
 
 local function check_login()
 	if player.login == nil or player.login == false then
@@ -120,6 +96,7 @@ function GAME:leave_room()
 			return { base_resp = make_resp(-1, "离开房间失败") }
 		end
 	end
+
 	return { base_resp = make_resp(0, "离开房间成功") }
 	--skynet.call(WATCHDOG, "lua", "close", client_fd)
 end
@@ -137,6 +114,10 @@ local function send_package(pack)
 	socket.write(player.fd, package)
 end
 
+function GAME:create_room()
+	local ret = skynet.call("DOUNIUSERVER", "lua", "create_room", self.odds, player)
+end
+
 function GAME:login()
 	--if true == check_login() then
 	--	--顶下线
@@ -144,26 +125,30 @@ function GAME:login()
 
 	local ok, res = new_dao.call("get_user_info",
 	{user_name = self.user_name, passwd = self.passwd})
-	if not ok then
-		print("call db_service fail, error: ", res)
-	end
+	ok = true
+	--if not ok then
+	--	print("call db_service fail, error: ", res)
+	--end
 
+	--local user = res and res[1]
+	--if user == nil then
+	--	ok = false
+	--end
 
-	local user = res and res[1]
-	if user == nil then
-		ok = false
-	end
-
-	print_t(user)
-	print('------db result')
-	print_t(res)
+	--print_t(user)
+	--print('------db result')
+	--print_t(res)
 	
 	if ok == true then
-		player.uid = user.uid
+		player.uid = math.random(50000000)
+		--player.uid = user.uid
 		player.login = true
-		player.nick_name = user.nick_name
-		player.money = user.money
-		player.icon = user.icon
+		player.nick_name = "test"
+		player.money = 200000
+		player.icon = ""
+		--player.nick_name = user.nick_name
+		--player.money = user.money
+		--player.icon = user.icon
 		print("login success uid:",player.uid)
 		--player.agent = skynet.self()
 		

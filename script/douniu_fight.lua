@@ -31,7 +31,6 @@ local function send_user_odds(uid_lst)
 end
 
 local function initRoomPlayer(player)
-    --print('initPlayer:')
 	local player = {
 		uid = player.uid,
 		odds = 0,
@@ -359,7 +358,7 @@ function DouNiuEvHandler:onStart(room_info)
 	status_begin = os.time()
 	update_game_process()
 
-	skynet.sleep(5)
+	skynet.sleep(10)
 
 	DouNiuEvHandler:onShuffle()
 	DouNiuEvHandler.checkStatus()
@@ -481,7 +480,6 @@ function DouNiuEvHandler:onPackCard(uid, ret_card_lst)
 		player.hand_card_ready = true
 		send_user_odds({uid})
 	end
-
 	--local is_niu = false
 	--if get_table_nums(ret_card_lst) == 3 then
 	--	local player = getPlayer(uid)
@@ -503,6 +501,12 @@ end
 --游戏结束
 function DouNiuEvHandler:onGameOver()
 	print('DouNiuEvHandler:onGameOver')
+	skynet.call("DOUNIUSERVER", "lua", "unlock_room", room.room_id)
+end
+
+function DouNiuEvHandler:onKickOut(uid)
+	print('DouNiuEvHandler:onGameOver')
+	room.player_lst[uid] = nil
 	skynet.call("DOUNIUSERVER", "lua", "unlock_room", room.room_id)
 end
 

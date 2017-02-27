@@ -93,3 +93,14 @@ set_odds 7 {
 		base_resp 0 : BaseResp
 	}
 }
+
+create_room 8 {
+	request {
+		base_req 0 : BaseReq
+		odds 1 : integer #赔率
+	}
+	response {
+		base_resp 0 : BaseResp
+		room_id 1 : integer #房号
+	}
+}

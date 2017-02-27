@@ -2,13 +2,6 @@ local skynet = require "skynet"
 local redis = require "redis"
 local sprotoloader = require "sprotoloader"
 
-local conf = 
-{
-	host = "127.0.0.1",
-	port = 6379,
-	db = 0
-}
-
 local function start_db_service()
 	local db_service_cnt = tonumber(skynet.getenv "db_service_cnt")
 	for i = 1, db_service_cnt do
@@ -17,23 +10,31 @@ local function start_db_service()
 end
 
 skynet.start(function()
-	--local db = redis.connect(conf)
-	--db:set('A', 555)
-	--print(db:get('A'))
 	math.randomseed(os.time())
 	print("Server start")
 	start_db_service()
 	skynet.uniqueservice("protoloader")
-	local douniu_room = skynet.newservice("douniu_room")
-	local auth = skynet.newservice("auth")
-	--local dao = skynet.newservice("dao")
+
+	--local loginserver = skynet.newservice("logind")
+	--local gate = skynet.newservice("gated", loginserver)
+	--skynet.call(gate, "lua", "open" , {
+	--	port = 8888,
+	--	maxclient = 64,
+	--	servername = "sample",
+	--})
+
 	local watchdog = skynet.newservice("watchdog")
 	local debug_console = skynet.newservice("debug_console", 8889)
 	skynet.call(watchdog, "lua", "start", {
 		port = 8888,
-		maxclient = max_client,
+		maxclient = 10000,
 		nodelay = true,
 	})
+
+	--游戏逻辑相关
+	--初始化游戏大厅
+	local douniu_room = skynet.newservice("douniu_room")
+
 	skynet.exit()
 	print('main exit')
 end)
